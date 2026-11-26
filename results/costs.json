@@ -1,0 +1,20 @@
+{
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "device": "NVIDIA H100 PCIe MIG 3g.40gb",
+ "n_queries": 48,
+ "max_tokens": 512,
+ "prompt_tokens": {
+  "plain": 332.25,
+  "spotlight": 510.75
+ },
+ "chunks_per_query": 3.5208333333333335,
+ "detector_ms_per_query": {
+  "cpu": 320.32802188768983,
+  "gpu": 14.664224116131663
+ },
+ "sink_ms_per_answer": 0.4818388260900974,
+ "llm_s_per_query": {
+  "plain": 4.396907760994509,
+  "spotlight": 3.9527337392792106
+ }
+}

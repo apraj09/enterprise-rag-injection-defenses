@@ -1,0 +1,20 @@
+{
+ "model": "Qwen/Qwen2.5-14B-Instruct",
+ "device": "NVIDIA H100 NVL MIG 3g.47gb",
+ "n_queries": 48,
+ "max_tokens": 512,
+ "prompt_tokens": {
+  "plain": 332.25,
+  "spotlight": 510.75
+ },
+ "chunks_per_query": 3.5208333333333335,
+ "detector_ms_per_query": {
+  "cpu": 303.30738495104015,
+  "gpu": 30.517878010869026
+ },
+ "sink_ms_per_answer": 0.2690961118787527,
+ "llm_s_per_query": {
+  "plain": 5.084740172373131,
+  "spotlight": 4.70924506848678
+ }
+}

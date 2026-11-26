@@ -1,0 +1,83 @@
+#!/bin/bash
+# qsub -v WORK=/tmp/$USER,GPU=auto,BACKEND=hf,MODEL=Qwen/Qwen2.5-7B-Instruct,OUT=results run_h100.pbs
+#   WORK        folder with venvs/itpro, the Hugging Face cache and other caches (default: $HOME)
+#   GPU         MIG UUID of the slice to use, or "auto" for the slice with the most free memory
+#   BACKEND     vllm (falls back to vllm --eager, then hf) or hf
+#   MODEL, OUT  model and results folder (a new OUT for every model)
+#   GPU_MEM     vLLM only: fraction of the slice to use (default 0.85)
+#   COSTS=0     skips the cost measurement, ONLY_COSTS=1 only measures costs for an existing OUT
+#PBS -N layering
+#PBS -q workq
+#PBS -l select=1:ncpus=4:ngpus=1:mem=32gb
+#PBS -l walltime=06:00:00
+#PBS -j oe
+#PBS -o layering.log
+
+set -eo pipefail
+cd "$PBS_O_WORKDIR"
+
+WORK=${WORK:-$HOME}
+source "$WORK/venvs/itpro/bin/activate"
+
+export HF_HOME="$WORK/hf_cache"
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export XDG_CACHE_HOME="$WORK/.cache"
+export TRITON_CACHE_DIR="$WORK/.cache/triton"
+export VLLM_NO_USAGE_STATS=1 DO_NOT_TRACK=1 HF_HUB_DISABLE_TELEMETRY=1
+export PYTHONUNBUFFERED=1 VLLM_WORKER_MULTIPROC_METHOD=spawn
+export TMPDIR="$WORK/tmp"
+
+MODEL=${MODEL:-Qwen/Qwen2.5-7B-Instruct}
+BACKEND=${BACKEND:-vllm}
+OUT=${OUT:-results}
+GPU_MEM=${GPU_MEM:-0.85}
+mkdir -p "$TMPDIR" "$OUT"
+
+echo "== job ${PBS_JOBID:-?} on $(hostname) at $(date) =="
+echo "work=$WORK model=$MODEL backend=$BACKEND out=$OUT gpu=${GPU:-<unset>}"
+
+# The scheduler does not isolate GPUs, so the job pins one slice.
+if [ "${GPU:-}" = "auto" ]; then
+    GPU=$(python -m layering.preflight --pick --backend "$BACKEND" --model "$MODEL" --gpu-mem "$GPU_MEM")
+    echo "picked slice $GPU"
+fi
+if [ -n "${GPU:-}" ]; then
+    export CUDA_VISIBLE_DEVICES="$GPU"
+elif [ -z "${CUDA_VISIBLE_DEVICES:-}" ]; then
+    echo "No GPU pinned. Resubmit with -v GPU=auto or GPU=<MIG UUID of your slice>"
+    exit 2
+fi
+
+BATCH=$(python -m layering.preflight --backend "$BACKEND" --model "$MODEL" --gpu-mem "$GPU_MEM")
+
+python -m layering.sink_tests
+
+attempt() {
+    local name=$1; shift
+    echo "== attempt: $name ($(date +%H:%M)) =="
+    if python -m layering.run --model "$MODEL" --gpu-mem "$GPU_MEM" --out "$OUT" "$@" 2>&1 \
+            | tee "$OUT/attempt_$name.log"; then
+        echo "== attempt $name succeeded =="; return 0
+    fi
+    echo "== attempt $name FAILED. First error lines (full log: $OUT/attempt_$name.log): =="
+    grep -nE "Error|Traceback|Killed|out of memory|No such file|not found" "$OUT/attempt_$name.log" \
+        | grep -viE "warn" | head -15 || true
+    return 1
+}
+
+if [ "${ONLY_COSTS:-0}" != "1" ]; then
+    if [ "$BACKEND" = "hf" ]; then
+        attempt hf --backend hf --batch-size "$BATCH"
+    else
+        attempt vllm --backend vllm || attempt vllm_eager --backend vllm --eager \
+            || attempt hf --backend hf --batch-size "$BATCH"
+    fi
+    python -m layering.analyze --res "$OUT"
+fi
+
+if [ "${COSTS:-1}" = "1" ]; then
+    echo "== cost measurement ($(date +%H:%M)) =="
+    python -m layering.costs --res "$OUT" --model "$MODEL"
+fi
+echo "== done at $(date) =="

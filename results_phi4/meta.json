@@ -1,0 +1,16 @@
+{
+ "model": "microsoft/phi-4",
+ "backend": "hf",
+ "detector": "protectai/deberta-v3-base-prompt-injection-v2",
+ "max_tokens": 512,
+ "eager": false,
+ "batch_size": 8,
+ "n_dev": 12,
+ "n_test": 48,
+ "n_payloads": {
+  "standard": 20,
+  "natural": 20,
+  "adaptive": 20
+ },
+ "minutes": 162.7
+}

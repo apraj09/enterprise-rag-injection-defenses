@@ -1,0 +1,20 @@
+{
+ "model": "microsoft/phi-4",
+ "device": "NVIDIA H100 NVL MIG 3g.47gb",
+ "n_queries": 48,
+ "max_tokens": 512,
+ "prompt_tokens": {
+  "plain": 327.0416666666667,
+  "spotlight": 625.1458333333334
+ },
+ "chunks_per_query": 3.5208333333333335,
+ "detector_ms_per_query": {
+  "cpu": 307.4521184898913,
+  "gpu": 12.575170490890741
+ },
+ "sink_ms_per_answer": 1.2202758807688951,
+ "llm_s_per_query": {
+  "plain": 4.037539813900366,
+  "spotlight": 3.8406646479852498
+ }
+}
