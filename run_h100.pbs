@@ -1,5 +1,5 @@
 #!/bin/bash
-# qsub -v WORK=/tmp/$USER,GPU=auto,BACKEND=hf,MODEL=Qwen/Qwen2.5-7B-Instruct,OUT=results run_h100.pbs
+# qsub -v WORK=/tmp/$USER,GPU=auto,BACKEND=hf,MODEL=Qwen/Qwen2.5-7B-Instruct,OUT=rerun_7b run_h100.pbs
 #   WORK        folder with venvs/itpro, the Hugging Face cache and other caches (default: $HOME)
 #   GPU         MIG UUID of the slice to use, or "auto" for the slice with the most free memory
 #   BACKEND     vllm (falls back to vllm --eager, then hf) or hf

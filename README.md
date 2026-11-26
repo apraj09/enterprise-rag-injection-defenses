@@ -29,12 +29,12 @@ Python 3.12. Model runs need a CUDA GPU. All models are ungated on Hugging Face.
 pip install -r requirements.txt
 
 python -m layering.sink_tests
-python -m layering.run --backend hf --model Qwen/Qwen2.5-7B-Instruct --out results
-python -m layering.analyze --res results
-python -m layering.costs --res results --model Qwen/Qwen2.5-7B-Instruct
+python -m layering.run --backend hf --model Qwen/Qwen2.5-7B-Instruct --out rerun_7b
+python -m layering.analyze --res rerun_7b
+python -m layering.costs --res rerun_7b --model Qwen/Qwen2.5-7B-Instruct
 ```
 
-`sink_tests` needs no GPU, and `--backend mock --detector mock` checks the harness without one (its numbers mean nothing). Decoding is greedy and answers are cached in `<out>/llm_cache.jsonl`, so an interrupted run resumes. With the transformers backend on one H100 MIG slice, the runs took 70 min (7B), 155 min (14B) and 163 min (Phi-4).
+Write reruns to a new folder, as above, so the published results stay unchanged. `sink_tests` needs no GPU, and `python -m layering.run --backend mock --detector mock --out /tmp/mock` checks the harness without one (its numbers mean nothing). Decoding is greedy and answers are cached in `<out>/llm_cache.jsonl`, so an interrupted run resumes. The published runs used the transformers backend (`--backend hf`) and took about 70 min (7B), 155 min (14B) and 163 min (Phi-4) on one H100 MIG slice. `--backend vllm` needs vLLM, which is not in `requirements.txt`.
 
 On a PBS cluster, download the models into `$WORK/hf_cache` on a node with internet access, then submit `run_h100.pbs` as shown at the top of the file.
 
@@ -42,19 +42,20 @@ Model snapshots: Qwen2.5-7B-Instruct `a09a35458c702b33eeacc393d103063234e8bc28` 
 
 ## Results
 
-Each results folder holds `runs.jsonl` (one row per applicant, payload and condition, with the raw answer and every measured field), `report.md` (attack success with 95% Wilson intervals for every payload set, clean-query utility, the correlated-failure test, sink filters and the escalation analysis), `joint_miss.csv`, `payloads.json`, `adaptive_selection.json`, `costs.md`, `costs.json` and `meta.json`. Crude payloads are called `standard` in the files.
+Each results folder holds `runs.jsonl` (one row per applicant, payload and condition, with the raw answer and every measured field), `report.md` (attack success with 95% Wilson intervals for every payload set, clean-query utility, the correlated-failure test, sink filters and the escalation analysis), `joint_miss.csv`, `payloads.json`, `adaptive_selection.json`, `costs.md`, `costs.json` and `meta.json`. In the files, data theft is `exfil`, manipulation is `integrity` and crude payloads are `standard`.
 
 | Number in the article | Source |
 |---|---|
-| Table 2 | `results/report.md`, attack success table and legit links kept |
+| Table 2 | `results/report.md`, attack success table and the legit links column of the clean-query table |
 | Detector flags 18.8% of payloads, payload text still reaches the model in 44% of flagged cases | `results/report.md`, below the attack success table |
-| Observed/predicted 1.02 and 1.14 (7B), 1.08 (14B), 1.06 (Phi-4) | `joint_miss.csv`, rows `standard+natural` |
+| Observed/predicted 1.02 and 1.14 (7B), 1.08 (14B), 1.06 (Phi-4) | `joint_miss.csv` of each model, rows `standard+natural` |
+| Adaptive manipulation with all three defenses, 64.2% (14B) and 100% (Phi-4) | `report.md` of those models, row `All three` |
 | Escalate instead of drop | `report.md`, last section |
 | Costs | `costs.md` |
 | Simple filter leaks on 9 of 21 tricks | `python -m layering.sink_tests` |
 | Detector flags 66% of crude theft payloads and under 4% of the others | `poison_flagged`, condition `none`, exfil rows by payload set |
 | 132, 178 and 351 of 5,760 theft attempts leak, none after the allowlist | `leak_plain` and `leak_sink`, exfil rows of the four model conditions |
-| 62 of 1,440 undefended answers contain an attacker link | exfil rows of condition `none` |
+| 62 of 1,440 undefended answers contain an attacker link | exfil rows of condition `none` with a link to `EXFIL_HOST_STD` or `NATURAL_HOSTS` from `layering/data.py` |
 | All 20 new successes with the detector come from partial deletion | integrity `standard` rows, `det` against `none`, `poison_flagged` and `poison_survives` |
 | The 14B model copies the marker into 58% of its answers | condition `spot` in `results_qwen14b/runs.jsonl`, answers containing `ˆ` |
 

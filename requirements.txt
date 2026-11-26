@@ -1,4 +1,3 @@
-vllm
 transformers>=4.44
 accelerate
 torch
