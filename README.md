@@ -44,9 +44,18 @@ Model snapshots: Qwen2.5-7B-Instruct `a09a35458c702b33eeacc393d103063234e8bc28` 
 
 Each results folder holds `runs.jsonl` (one row per applicant, payload and condition, with the raw answer and every measured field), `report.md` (attack success with 95% Wilson intervals for every payload set, clean-query utility, the correlated-failure test, sink filters and the escalation analysis), `joint_miss.csv`, `payloads.json`, `adaptive_selection.json`, `costs.md`, `costs.json` and `meta.json`. In the files, data theft is `exfil`, manipulation is `integrity` and crude payloads are `standard`.
 
+Each run has 8,832 answers: 48 test applicants × 30 theft payloads, 24 weak applicants × 30 manipulation payloads and 48 clean queries, each under the four model conditions `none`, `spot`, `det` and `spot_det`. The allowlist rows filter these same answers, so they need no extra model calls.
+
+Natural payloads are random combinations of the hand-written templates in `layering/data.py` (10 framings and 8 bodies per goal, with hosts and placements). Adaptive payloads come from the same templates and are selected separately for each model on its 12 dev applicants. `leak_plain_loose` and `leak_sink_loose` also count percent-encoded, base64-encoded and reformatted copies of the secret.
+
+Five of the 21 sink tricks come from disclosed incidents: the reference-style image, the reference-style link and the Microsoft Teams proxy from EchoLeak ([Reddy and Gujral, 2025](https://arxiv.org/abs/2509.10540)), the Markdown link from Slack AI ([PromptArmor, 2024](https://promptarmor.substack.com/p/data-exfiltration-from-slack-ai-via)) and the Apps Script host from Google Bard ([Rehberger, 2023](https://embracethered.com/blog/posts/2023/google-bard-data-exfiltration/)). The other 16 are common HTML variants.
+
 | Number in the article | Source |
 |---|---|
 | Table 2 | `results/report.md`, attack success table and the legit links column of the clean-query table |
+| 34 legitimate links, 15 on the company host and 19 on GitHub | `portfolio_url` of the clean rows in `runs.jsonl` |
+| Correlation between the two layers' failures below 0.05 | `joint_miss.csv`, column `phi` |
+| None of the 48 clean resumes flagged | `report.md`, last line |
 | Detector flags 18.8% of payloads, payload text still reaches the model in 44% of flagged cases | `results/report.md`, below the attack success table |
 | Observed/predicted 1.02 and 1.14 (7B), 1.08 (14B), 1.06 (Phi-4) | `joint_miss.csv` of each model, rows `standard+natural` |
 | Adaptive manipulation with all three defenses, 64.2% (14B) and 100% (Phi-4) | `report.md` of those models, row `All three` |

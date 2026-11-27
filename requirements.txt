@@ -2,7 +2,7 @@ transformers>=4.44
 accelerate
 torch
 markdown
-beautifulsoup4
+beautifulsoup4>=4.9.1
 pandas
 numpy
 nvidia-ml-py

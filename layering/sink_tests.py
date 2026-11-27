@@ -1,5 +1,5 @@
-"""Replay 21 sink tricks from disclosed incidents against a simple filter (v0) and
-safe_render (v1). No model needed.
+"""Replay 21 sink tricks (five from disclosed incidents, the rest common HTML variants)
+against a simple filter (v0) and safe_render (v1). No model needed.
 
 Usage: python -m layering.sink_tests
 """
