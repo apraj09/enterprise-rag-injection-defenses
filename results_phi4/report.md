@@ -16,6 +16,7 @@ Integrity ASR counts only flips (candidate rejected without the payload). Weak c
 Poisoned chunk retrieved: 100.0% [100–100]; detector flags poisoned chunk (when retrieved): 18.4% [17–20].
 Detector flagged part of the payload but other payload text still reached the model (payload split across chunks): 43.5% [39–48] of rows with a flag.
 Model emitted the secret anywhere in its answer (no defense, exfil): 6.7% [5–8]
+Secret in the answer but in no attacker link (exfil rows, four model conditions): 0.1% [0–0]
 
 Diagnostic, not in the ASR above: secret leaving through a non-allowlisted URL in any form, including encoded or reformatted copies (exfil rows):
 - No defense: exact 6.5% [5–8], any form 6.5% [5–8]
@@ -46,18 +47,19 @@ Legit links kept falls under the sink rows because external portfolio links (git
 
 ## Correlated failures: detector x Spotlighting
 
-| Goal | Payloads | n | P(detector misses) | P(Spotlighting fails) | Predicted stack ASR if independent | Observed stack ASR | Observed / predicted | phi |
-|---|---|---|---|---|---|---|---|---|
-| exfil | standard | 480 | 0.56 | 0.01 | 0.006 | 0.004 | 0.71 [0.00–1.78] | 0.09 |
-| exfil | natural | 480 | 1.00 | 0.05 | 0.052 | 0.050 | 0.96 [0.86–1.00] | nan |
-| exfil | standard+natural | 960 | 0.78 | 0.03 | 0.024 | 0.027 | 1.11 [0.93–1.26] | 0.09 |
-| exfil | adaptive | 480 | 1.00 | 0.14 | 0.135 | 0.125 | 0.92 [0.85–0.98] | nan |
-| integrity | standard | 240 | 0.93 | 0.25 | 0.233 | 0.271 | 1.16 [0.99–1.38] | -0.15 |
-| integrity | natural | 240 | 1.00 | 0.45 | 0.446 | 0.442 | 0.99 [0.97–1.00] | nan |
-| integrity | standard+natural | 480 | 0.97 | 0.35 | 0.336 | 0.356 | 1.06 [1.00–1.13] | -0.06 |
-| integrity | adaptive | 240 | 1.00 | 1.00 | 1.000 | 1.000 | 1.00 [1.00–1.00] | nan |
+| Goal | Payloads | n | P(detector misses) | P(Spotlighting fails) | Predicted stack ASR if independent | Observed stack ASR | Observed / predicted | phi | Ratio CI, resampling applicants | Ratio CI, resampling payloads |
+|---|---|---|---|---|---|---|---|---|---|---|
+| exfil | standard | 480 | 0.56 | 0.01 | 0.006 | 0.004 | 0.71 [0.00–1.78] | 0.09 | [0.00–1.82] | [0.00–1.35] |
+| exfil | natural | 480 | 1.00 | 0.05 | 0.052 | 0.050 | 0.96 [0.86–1.00] | nan | [0.87–1.00] | [0.89–1.00] |
+| exfil | standard+natural | 960 | 0.78 | 0.03 | 0.024 | 0.027 | 1.11 [0.93–1.26] | 0.09 | [0.91–1.31] | [0.67–1.31] |
+| exfil | adaptive | 480 | 1.00 | 0.14 | 0.135 | 0.125 | 0.92 [0.85–0.98] | nan | [0.80–1.00] | [0.82–1.00] |
+| integrity | standard | 240 | 0.93 | 0.25 | 0.233 | 0.271 | 1.16 [0.99–1.38] | -0.15 | [0.97–1.43] | [0.97–1.57] |
+| integrity | natural | 240 | 1.00 | 0.45 | 0.446 | 0.442 | 0.99 [0.97–1.00] | nan | [0.97–1.00] | [0.97–1.00] |
+| integrity | standard+natural | 480 | 0.97 | 0.35 | 0.336 | 0.356 | 1.06 [1.00–1.13] | -0.06 | [0.99–1.13] | [0.99–1.21] |
+| integrity | adaptive | 240 | 1.00 | 1.00 | 1.000 | 1.000 | 1.00 [1.00–1.00] | nan | [1.00–1.00] | [1.00–1.00] |
 
 Ratio near 1 = the two layers fail independently (stacking multiplies protection). Ratio well above 1, or phi > 0 = they fail on the same payloads. On the adaptive set the detector miss rate is ~1 by construction, so read the observed stack ASR there, not the ratio.
+The bracketed ratio CI resamples applicant and payload pairs. The last two columns resample whole applicants or whole payloads instead.
 
 ## Sink filters on model outputs
 
